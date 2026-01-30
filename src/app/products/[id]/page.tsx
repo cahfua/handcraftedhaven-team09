@@ -115,7 +115,7 @@ export default function ProductPage({
             {submitting ? "Submitting…" : "Submit"}
           </button>
           <p style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>
-            (Demo mode: review submits using a placeholder user.)
+            (For now: since we don't have real user auth, reviews are submitted using a placeholder user.)
           </p>
         </div>
 

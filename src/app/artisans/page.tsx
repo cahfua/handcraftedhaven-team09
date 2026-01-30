@@ -3,6 +3,7 @@
 
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 
 export default async function ArtisansPage() {
   const sellers = await prisma.seller.findMany({
@@ -39,3 +40,4 @@ export default async function ArtisansPage() {
     </main>
   );
 }
+

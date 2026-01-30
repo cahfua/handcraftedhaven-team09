@@ -12,6 +12,7 @@ type Product = {
   description: string;
   priceCents: number;
   category: string;
+  imageUrl?: string | null;
 };
 
 export default function ShopPage() {
