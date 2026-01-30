@@ -1,6 +1,8 @@
 // src/app/shop/page.tsx
 "use client";
 
+// This is the “Shop” browsing page. Styling is class-based
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
@@ -37,39 +39,69 @@ export default function ShopPage() {
   }, [query]);
 
   return (
-    <main style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center" }}>
-        <h1>Shop</h1>
-        <Link href="/">Home</Link>
-      </header>
+    <main className="container">
+      <h1 className="h1">Shop</h1>
+      <p className="muted">Filter products by category or price range.</p>
 
-      <section aria-label="Filters" style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
-        <label>
+      <section className="filters" aria-label="Filters">
+        <label className="label">
           Category
-          <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Ceramics" style={{ width: "100%" }} />
+          <input
+            className="input"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            placeholder="ceramics"
+          />
         </label>
-        <label>
+        <label className="label">
           Min price ($)
-          <input value={min} onChange={(e) => setMin(e.target.value)} inputMode="numeric" style={{ width: "100%" }} />
+          <input
+            className="input"
+            value={min}
+            onChange={(e) => setMin(e.target.value)}
+            inputMode="numeric"
+            placeholder="10"
+          />
         </label>
-        <label>
+        <label className="label">
           Max price ($)
-          <input value={max} onChange={(e) => setMax(e.target.value)} inputMode="numeric" style={{ width: "100%" }} />
+          <input
+            className="input"
+            value={max}
+            onChange={(e) => setMax(e.target.value)}
+            inputMode="numeric"
+            placeholder="100"
+          />
         </label>
       </section>
 
-      <section style={{ marginTop: 20 }}>
+      <section className="section" aria-label="Results">
         {loading ? (
           <p>Loading…</p>
+        ) : products.length === 0 ? (
+          <div className="card">
+            <p className="muted">No products found. Try a different filter.</p>
+            <Link className="btn btnGhost" href="/">
+              Back home
+            </Link>
+          </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
+          <div className="grid">
             {products.map((p) => (
-              <article key={p.id} style={{ border: "1px solid #ddd", borderRadius: 12, padding: 14 }}>
-                <h2 style={{ marginTop: 0, fontSize: 18 }}>{p.title}</h2>
-                <p style={{ margin: "8px 0" }}>{p.description}</p>
-                <p style={{ margin: "8px 0", fontWeight: 600 }}>${(p.priceCents / 100).toFixed(2)}</p>
-                <p style={{ margin: "8px 0", opacity: 0.8 }}>{p.category}</p>
-                <Link href={`/products/${p.id}`}>View details →</Link>
+              <article key={p.id} className="card">
+                <h2 className="h3">{p.title}</h2>
+                <p className="muted">{p.description}</p>
+
+                <div className="cardMeta">
+                  <span className="price">${(p.priceCents / 100).toFixed(2)}</span>
+                  <span className="badge">{p.category}</span>
+                </div>
+
+                <div style={{ marginTop: 10 }}>
+                  <Link className="btn btnPrimary" href={`/products/${p.id}`}>
+                    View details →
+                  </Link>
+                </div>
               </article>
             ))}
           </div>
@@ -78,3 +110,4 @@ export default function ShopPage() {
     </main>
   );
 }
+

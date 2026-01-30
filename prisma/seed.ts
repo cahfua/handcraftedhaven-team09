@@ -4,10 +4,19 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  const sellerUser = await prisma.user.upsert({
-    where: { email: "seller@haven.com" },
-    update: {},
-    create: {
+  console.log("🌱 Seeding database...");
+
+  // Clear existing data
+  await prisma.review.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.seller.deleteMany();
+  await prisma.user.deleteMany();
+
+  console.log("🧹 Existing data cleared");
+
+  // Create seller user + seller profile
+  const sellerUser = await prisma.user.create({
+    data: {
       name: "Ava Artisan",
       email: "seller@haven.com",
       password: "hashed-later",
@@ -18,15 +27,22 @@ async function main() {
           story:
             "I started crafting ceramics in my garage and fell in love with the process.",
           location: "Austin, TX",
-          avatarUrl: "",
-        },
-      },
+          avatarUrl: ""
+        }
+      }
     },
-    include: { seller: true },
+    include: { seller: true }
   });
 
-  const sellerId = sellerUser.seller!.id;
+  if (!sellerUser.seller) {
+    throw new Error("Seller profile was not created");
+  }
 
+  console.log("👩‍🎨 Seller created:", sellerUser.email);
+
+  const sellerId = sellerUser.seller.id;
+
+  // Create products
   await prisma.product.createMany({
     data: [
       {
@@ -35,7 +51,7 @@ async function main() {
         description: "Wheel-thrown mug with a speckled glaze.",
         priceCents: 2800,
         category: "Ceramics",
-        imageUrl: "",
+        imageUrl: ""
       },
       {
         sellerId,
@@ -43,15 +59,18 @@ async function main() {
         description: "Durable handwoven tote bag.",
         priceCents: 3500,
         category: "Textiles",
-        imageUrl: "",
-      },
-    ],
+        imageUrl: ""
+      }
+    ]
   });
+
+  console.log("🛍️ Products seeded");
+  console.log("✅ Database seeding complete");
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error("❌ Seeding failed:", e);
     process.exit(1);
   })
   .finally(async () => {
