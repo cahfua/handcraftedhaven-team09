@@ -8,6 +8,9 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+const knownCategories = ["Misc", "Woodworking", "Textiles", "Ceramics", "Painting"];
+
+
 type Product = {
   id: string;
   title: string;
@@ -37,12 +40,21 @@ export default function ShopPage() {
 
   // Build category options from products
   const categories = useMemo(() => {
-    const set = new Set<string>();
-    for (const p of products) {
-      if (p.category?.trim()) set.add(p.category.trim());
-    }
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [products]);
+  const set = new Set<string>();
+
+  // Always include these (even if there are no products yet)
+  for (const c of knownCategories) {
+    if (c.trim()) set.add(c.trim());
+  }
+
+  // Also include categories found in products
+  for (const p of products) {
+    if (p.category?.trim()) set.add(p.category.trim());
+  }
+
+  return Array.from(set).sort((a, b) => a.localeCompare(b));
+}, [products]);
+
 
   // Filter products by selected category (case-insensitive)
   const filtered = useMemo(() => {
