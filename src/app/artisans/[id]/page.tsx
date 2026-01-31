@@ -1,16 +1,18 @@
 // src/app/artisans/[id]/page.tsx
 // Artisan detail page. Shows artisan info + their products.
 
-import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 
 export default async function ArtisanDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
+
   const seller = await prisma.seller.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       user: true,
       products: true,
@@ -19,53 +21,38 @@ export default async function ArtisanDetailPage({
 
   if (!seller) {
     return (
-      <main className="container">
-        <h1 className="h1">Artisan not found</h1>
-        <Link className="btn btnGhost" href="/artisans">
-          Back to Artisans
-        </Link>
+      <main style={{ padding: 24 }}>
+        <p>Seller not found.</p>
+        <Link href="/artisans">← Back</Link>
       </main>
     );
   }
 
   return (
-    <main className="container">
-      <Link className="btn btnGhost" href="/artisans">
-        ← Back to Artisans
-      </Link>
+    <main style={{ padding: 24, maxWidth: 1000, margin: "0 auto" }}>
+      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Link href="/artisans">← Back</Link>
+        <Link href="/shop">Shop</Link>
+      </header>
 
-      <section className="section">
-        <h1 className="h1">{seller.user.name}</h1>
-        <p className="muted">{seller.bio || "No bio yet."}</p>
-      </section>
+      <h1 style={{ marginTop: 16 }}>{seller.user.name}</h1>
 
-      <section className="section" aria-label="Artisan products">
-        <h2 className="h2">Products</h2>
+      {seller.location && <p><strong>Location:</strong> {seller.location}</p>}
+      {seller.bio && <p><strong>Bio:</strong> {seller.bio}</p>}
+      {seller.story && <p><strong>Story:</strong> {seller.story}</p>}
 
-        {seller.products.length === 0 ? (
-          <div className="card">
-            <p className="muted">No products listed yet.</p>
-          </div>
-        ) : (
-          <div className="grid">
-            {seller.products.map((p: any) => (
-              <article key={p.id} className="card">
-                <h3 className="h3">{p.title}</h3>
-                <p className="muted">{p.description}</p>
-                <div className="cardMeta">
-                  <span className="price">${(p.priceCents / 100).toFixed(2)}</span>
-                  <span className="badge">{p.category}</span>
-                </div>
-                <div style={{ marginTop: 10 }}>
-                  <Link className="btn btnPrimary" href={`/products/${p.id}`}>
-                    View details →
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
+      <h2 style={{ marginTop: 20 }}>Products</h2>
+      {seller.products.length === 0 ? (
+        <p>No products yet.</p>
+      ) : (
+        <ul>
+          {seller.products.map((p) => (
+            <li key={p.id}>
+              <Link href={`/products/${p.id}`}>{p.title}</Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }
