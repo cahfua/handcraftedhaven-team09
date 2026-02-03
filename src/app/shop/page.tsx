@@ -29,6 +29,10 @@ export default function ShopPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<"newest" | "price-asc" | "price-desc">("newest");
+
+
   // Load products
   useEffect(() => {
     setLoading(true);
@@ -58,9 +62,34 @@ export default function ShopPage() {
 
   // Filter products by selected category (case-insensitive)
   const filtered = useMemo(() => {
-    if (!categoryParam) return products;
-    return products.filter((p) => p.category.toLowerCase() === categoryParam);
-  }, [products, categoryParam]);
+  // 1) category filter
+  let result = categoryParam
+    ? products.filter((p) => p.category.toLowerCase() === categoryParam)
+    : products;
+
+  // 2) search filter (title + description)
+  const q = query.trim().toLowerCase();
+  if (q) {
+    result = result.filter((p) => {
+      const haystack = `${p.title} ${p.description} ${p.category}`.toLowerCase();
+      return haystack.includes(q);
+    });
+  }
+
+  // 3) sort
+  result = [...result];
+  if (sort === "price-asc") {
+    result.sort((a, b) => a.priceCents - b.priceCents);
+  } else if (sort === "price-desc") {
+    result.sort((a, b) => b.priceCents - a.priceCents);
+  } else {
+    // newest: assumes IDs are not time-based; keep API order (createdAt desc) if API returns that
+    // If your API already orders by createdAt desc, leaving as-is is fine.
+  }
+
+  return result;
+}, [products, categoryParam, query, sort]);
+
 
   function onCategoryChange(value: string) {
     // value is already lowercase slug (or "" for all)
@@ -100,6 +129,40 @@ export default function ShopPage() {
             ))}
           </select>
         </label>
+        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <span style={{ fontWeight: 600 }}>Search:</span>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search products…"
+            style={{ padding: 8, borderRadius: 8, minWidth: 220 }}
+            aria-label="Search products"
+        />
+      </label>
+
+      <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <span style={{ fontWeight: 600 }}>Sort:</span>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as any)}
+          style={{ padding: 8, borderRadius: 8 }}
+          aria-label="Sort products"
+     >
+          <option value="newest">Newest</option>
+          <option value="price-asc">Price: Low → High</option>
+          <option value="price-desc">Price: High → Low</option>
+        </select>
+      </label>
+      <button
+        type="button"
+        onClick={() => setQuery("")}
+        style={{ padding: "8px 12px", borderRadius: 8 }}
+        disabled={!query}
+    >
+        Clear
+      </button>
+
+
 
         <p style={{ margin: 0, opacity: 0.75 }}>
           Showing <strong>{filtered.length}</strong> item{filtered.length === 1 ? "" : "s"}
