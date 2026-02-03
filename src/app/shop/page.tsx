@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const knownCategories = ["Misc", "Woodworking", "Textiles", "Ceramics", "Painting"];
+const PAGE_SIZE = 12;
 
 type Product = {
   id: string;
@@ -28,6 +29,7 @@ export default function ShopPage() {
   const categoryParam = (searchParams.get("category") || "").toLowerCase();
   const qParam = searchParams.get("q") || "";
   const sortParam = (searchParams.get("sort") || "newest") as SortOption;
+  const pageParam = Math.max(1, Number(searchParams.get("page") || "1"));
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +44,7 @@ export default function ShopPage() {
     setSort(sortParam);
   }, [qParam, sortParam]);
 
-  function updateUrl(next: { category?: string; q?: string; sort?: SortOption }) {
+  function updateUrl(next: { category?: string; q?: string; sort?: SortOption; page?: number }) {
     const params = new URLSearchParams(searchParams.toString());
 
     // category
@@ -64,6 +66,12 @@ export default function ShopPage() {
       else params.set("sort", next.sort);
     }
 
+    // page
+    if (next.page !== undefined) {
+      if (!next.page || next.page <= 1) params.delete("page");
+      else params.set("page", String(next.page));
+    }
+
     const qs = params.toString();
     router.push(qs ? `/shop?${qs}` : "/shop");
   }
@@ -76,14 +84,6 @@ export default function ShopPage() {
       .then((data) => setProducts(data))
       .finally(() => setLoading(false));
   }, []);
-
-  function getCategoryLabel(slug: string) {
-  const found = categories.find(
-    (c) => c.toLowerCase() === slug.toLowerCase()
-  );
-  return found || slug;
-}
-
 
   // Build category options from products + known list
   const categories = useMemo(() => {
@@ -99,6 +99,11 @@ export default function ShopPage() {
 
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [products]);
+
+  function getCategoryLabel(slug: string) {
+    const found = categories.find((c) => c.toLowerCase() === slug.toLowerCase());
+    return found || slug;
+  }
 
   // Filter + search + sort
   const filtered = useMemo(() => {
@@ -123,10 +128,20 @@ export default function ShopPage() {
     } else if (sort === "price-desc") {
       sorted.sort((a, b) => b.priceCents - a.priceCents);
     }
-    // "newest" = keep API order 
+    // "newest" = keep API order
 
     return sorted;
   }, [products, categoryParam, query, sort]);
+
+  // Pagination calculations (MUST be outside useMemo)
+  const totalItems = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const currentPage = Math.min(pageParam, totalPages);
+
+  const paged = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, currentPage]);
 
   return (
     <main style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
@@ -146,7 +161,7 @@ export default function ShopPage() {
           <span style={{ fontWeight: 600 }}>Category:</span>
           <select
             value={categoryParam}
-            onChange={(e) => updateUrl({ category: e.target.value })}
+            onChange={(e) => updateUrl({ category: e.target.value, page: 1 })}
             style={{ padding: 8, borderRadius: 8 }}
             aria-label="Filter by category"
           >
@@ -167,7 +182,7 @@ export default function ShopPage() {
             onChange={(e) => {
               const val = e.target.value;
               setQuery(val);
-              updateUrl({ q: val });
+              updateUrl({ q: val, page: 1 });
             }}
             placeholder="Search products…"
             style={{ padding: 8, borderRadius: 8, minWidth: 220 }}
@@ -183,7 +198,7 @@ export default function ShopPage() {
             onChange={(e) => {
               const val = e.target.value as SortOption;
               setSort(val);
-              updateUrl({ sort: val });
+              updateUrl({ sort: val, page: 1 });
             }}
             style={{ padding: 8, borderRadius: 8 }}
             aria-label="Sort products"
@@ -199,7 +214,7 @@ export default function ShopPage() {
           type="button"
           onClick={() => {
             setQuery("");
-            updateUrl({ q: "" });
+            updateUrl({ q: "", page: 1 });
           }}
           style={{ padding: "8px 12px", borderRadius: 8 }}
           disabled={!query}
@@ -208,16 +223,58 @@ export default function ShopPage() {
         </button>
 
         <p style={{ margin: 0, opacity: 0.75 }}>
-          Showing <strong>{filtered.length}</strong> item{filtered.length === 1 ? "" : "s"}
+          Showing <strong>{totalItems}</strong> items (showing {paged.length} on this page)
           {categoryParam ? (
             <>
-             {" "}
-             in <strong>{getCategoryLabel(categoryParam)}</strong>
+              {" "}
+              in <strong>{getCategoryLabel(categoryParam)}</strong>
             </>
           ) : null}
-
         </p>
       </section>
+
+      {/* Pagination */}
+      {!loading && totalItems > 0 ? (
+        <section style={{ marginTop: 14, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <button
+            type="button"
+            onClick={() => updateUrl({ page: currentPage - 1 })}
+            disabled={currentPage <= 1}
+            style={{ padding: "8px 12px", borderRadius: 8 }}
+          >
+            ← Prev
+          </button>
+
+          <span style={{ opacity: 0.8 }}>
+            Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+          </span>
+
+          <button
+            type="button"
+            onClick={() => updateUrl({ page: currentPage + 1 })}
+            disabled={currentPage >= totalPages}
+            style={{ padding: "8px 12px", borderRadius: 8 }}
+          >
+            Next →
+          </button>
+
+          <label style={{ display: "flex", gap: 8, alignItems: "center", marginLeft: 6 }}>
+            <span style={{ fontWeight: 600 }}>Go to:</span>
+            <select
+              value={currentPage}
+              onChange={(e) => updateUrl({ page: Number(e.target.value) })}
+              style={{ padding: 8, borderRadius: 8 }}
+              aria-label="Go to page"
+            >
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </label>
+        </section>
+      ) : null}
 
       {/* Products */}
       {loading ? (
@@ -233,7 +290,7 @@ export default function ShopPage() {
             gap: 14,
           }}
         >
-          {filtered.map((p) => (
+          {paged.map((p) => (
             <article key={p.id} style={{ border: "1px solid #ddd", borderRadius: 12, padding: 14 }}>
               {p.imageUrl ? (
                 <img
