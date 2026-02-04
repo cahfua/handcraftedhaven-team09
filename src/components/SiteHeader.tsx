@@ -1,5 +1,8 @@
 // src/components/SiteHeader.tsx
+"use client";
+
 import Link from "next/link";
+import { AuthButtons } from "@/components/AuthButtons";
 
 export default function SiteHeader() {
   return (
@@ -15,10 +18,10 @@ export default function SiteHeader() {
         <nav className="nav" aria-label="Primary navigation">
           <Link href="/shop">Shop</Link>
           <Link href="/artisans">Artisans</Link>
-          {/* Login can be wired later when Auth is ready */}
-          <Link href="/login">Login</Link>
+          <AuthButtons />
         </nav>
       </div>
     </header>
   );
 }
+

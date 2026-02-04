@@ -1,4 +1,4 @@
-//
+// src/app/dashboard/listings/[productId]/page.tsx
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
