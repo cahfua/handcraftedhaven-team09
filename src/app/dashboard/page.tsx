@@ -1,7 +1,9 @@
 // src/app/dashboard/page.tsx
-import Link from "next/link";
+//import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
 
 async function getDemoSeller() {
   // For now: dashboard uses the first seller found.
@@ -13,16 +15,19 @@ async function getDemoSeller() {
 }
 
 export default async function DashboardPage() {
-  const seller = await getDemoSeller();
+  const session = await getSession();
 
-  if (!seller) {
-    return (
-      <main style={{ padding: 24 }}>
-        <p>No seller found. Run seed or create a seller first.</p>
-        <Link href="/">← Back Home</Link>
-      </main>
-    );
+  if (!session?.user) {
+    redirect("/api/auth/signin");
   }
+
+  return (
+    <main style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
+      <h1>Dashboard</h1>
+      <p>Welcome, {session.user.name ?? session.user.email ?? "user"}!</p>
+    </main>
+  );
+}
 
   async function updateSeller(formData: FormData) {
     "use server";
