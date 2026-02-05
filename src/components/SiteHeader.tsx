@@ -18,6 +18,7 @@ export default function SiteHeader() {
         <nav className="nav" aria-label="Primary navigation">
           <Link href="/shop">Shop</Link>
           <Link href="/artisans">Artisans</Link>
+          <Link href="/dashboard">Dashboard</Link>
           <AuthButtons />
         </nav>
       </div>

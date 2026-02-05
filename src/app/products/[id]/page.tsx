@@ -34,8 +34,7 @@ export default function ProductPage({
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // TEMP user for MVP demo
-  const demoUserId = "demo-user-id";
+
 
   useEffect(() => {
     fetch(`/api/products/${id}`)
@@ -44,24 +43,34 @@ export default function ProductPage({
   }, [id]);
 
   async function submitReview() {
-    if (!comment.trim()) return;
+  if (!comment.trim()) return;
 
-    setSubmitting(true);
-    await fetch("/api/reviews", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        productId: id,
-        userId: demoUserId,
-        rating: Number(rating),
-        comment,
-      }),
-    });
-    setComment("");
-    const updated = await fetch(`/api/products/${id}`).then((r) => r.json());
-    setProduct(updated);
+  setSubmitting(true);
+
+  const res = await fetch("/api/reviews", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      productId: id,
+      rating: Number(rating),
+      comment,
+    }),
+  });
+
+  if (!res.ok) {
+    // Optional: show an error message
+    const err = await res.json().catch(() => ({}));
+    alert(err?.error || "Failed to submit review");
     setSubmitting(false);
+    return;
   }
+
+  setComment("");
+  const updated = await fetch(`/api/products/${id}`).then((r) => r.json());
+  setProduct(updated);
+  setSubmitting(false);
+}
+
 
   if (!product) return <p style={{ padding: 24 }}>Loading…</p>;
 
@@ -115,7 +124,8 @@ export default function ProductPage({
             {submitting ? "Submitting…" : "Submit"}
           </button>
           <p style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>
-            (For now: since we don't have real user auth, reviews are submitted using a placeholder user.)
+            (You must be signed in to submit a review.)
+
           </p>
         </div>
 

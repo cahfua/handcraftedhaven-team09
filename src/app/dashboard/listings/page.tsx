@@ -1,24 +1,25 @@
 // src/app/dashboard/listings/page.tsx
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-
-async function getDemoSeller() {
-  return prisma.seller.findFirst({
-    include: { user: true, products: { orderBy: { createdAt: "desc" } } },
-    orderBy: { createdAt: "asc" },
-  });
-}
+import { getSession } from "@/lib/auth";
 
 export default async function ListingsPage() {
-  const seller = await getDemoSeller();
+  const session = await getSession();
 
+  // Must be logged in (dashboard/layout.tsx should already enforce this, but double-check is fine)
+  const userId = (session?.user as any)?.id as string | undefined;
+  if (!userId) redirect("/api/auth/signin");
+
+  // Find the seller for this logged-in user
+  const seller = await prisma.seller.findUnique({
+    where: { userId },
+    include: { user: true, products: { orderBy: { createdAt: "desc" } } },
+  });
+
+  // If for some reason seller doesn't exist, send them back (dashboard layout should auto-create it)
   if (!seller) {
-    return (
-      <main style={{ padding: 24 }}>
-        <p>No seller found.</p>
-        <Link href="/dashboard">← Back to dashboard</Link>
-      </main>
-    );
+    redirect("/dashboard");
   }
 
   return (
@@ -32,7 +33,7 @@ export default async function ListingsPage() {
       </header>
 
       <p style={{ marginTop: 10, opacity: 0.85 }}>
-        Seller (demo): <strong>{seller.user.name}</strong>
+        Seller: <strong>{seller.user.name ?? seller.user.email ?? "Unnamed"}</strong>
       </p>
 
       {seller.products.length === 0 ? (
@@ -42,7 +43,14 @@ export default async function ListingsPage() {
           {seller.products.map((p) => (
             <article
               key={p.id}
-              style={{ border: "1px solid #ddd", borderRadius: 12, padding: 14, display: "flex", justifyContent: "space-between", gap: 12 }}
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: 12,
+                padding: 14,
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+              }}
             >
               <div>
                 <h2 style={{ margin: 0, fontSize: 18 }}>{p.title}</h2>

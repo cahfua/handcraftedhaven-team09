@@ -14,8 +14,18 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: { strategy: "database" },
+
+  callbacks: {
+    async session({ session, user }) {
+      // Add user.id + role into the session object
+      (session.user as any).id = user.id;
+      (session.user as any).role = (user as any).role;
+      return session;
+    },
+  },
 };
 
 export function getSession() {
   return getServerSession(authOptions);
 }
+

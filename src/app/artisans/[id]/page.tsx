@@ -1,5 +1,5 @@
 // src/app/artisans/[id]/page.tsx
-// Artisan detail page. Shows artisan info + their products.
+// Artisan detail page. Shows artisan info and their products.
 
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";

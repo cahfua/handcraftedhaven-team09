@@ -85,7 +85,7 @@ export default function ShopPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Build category options from products + known list
+  // Build category options from products and known list
   const categories = useMemo(() => {
     const set = new Set<string>();
 
