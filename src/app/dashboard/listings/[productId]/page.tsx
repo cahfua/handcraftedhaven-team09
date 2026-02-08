@@ -7,15 +7,16 @@ import { revalidatePath } from "next/cache";
 export default async function EditListingPage({
   params,
 }: {
-  params: Promise<{ productId: string }>;
+  params: { productId: string };
 }) {
-  const { productId } = await params;
+  const { productId } = params;
 
   const product = await prisma.product.findUnique({
     where: { id: productId },
     include: { seller: { include: { user: true } } },
   });
 
+  // If product not found
   if (!product) {
     return (
       <main style={{ padding: 24 }}>
@@ -25,6 +26,10 @@ export default async function EditListingPage({
     );
   }
 
+  const sellerId = product.sellerId;
+  const sellerName = product.seller?.user?.name ?? "Unknown";
+
+  // UPDATE PRODUCT
   async function updateProduct(formData: FormData) {
     "use server";
 
@@ -50,11 +55,12 @@ export default async function EditListingPage({
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/listings");
     revalidatePath(`/products/${id}`);
-    revalidatePath(`/artisans/${product.sellerId}`);
+    revalidatePath(`/artisans/${sellerId}`);
 
     redirect("/dashboard/listings");
   }
 
+  // DELETE PRODUCT
   async function deleteProduct(formData: FormData) {
     "use server";
 
@@ -66,35 +72,59 @@ export default async function EditListingPage({
     revalidatePath("/shop");
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/listings");
-    revalidatePath(`/artisans/${product.sellerId}`);
+    revalidatePath(`/artisans/${sellerId}`);
 
     redirect("/dashboard/listings");
   }
 
   return (
     <main style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 12,
+        }}
+      >
         <Link href="/dashboard/listings">← Back to listings</Link>
         <Link href="/dashboard">Dashboard</Link>
       </header>
 
       <h1 style={{ marginTop: 16 }}>Edit Listing</h1>
       <p style={{ marginTop: 6, opacity: 0.85 }}>
-        Seller: <strong>{product.seller.user.name}</strong>
+        Seller: <strong>{sellerName}</strong>
       </p>
 
-      <section style={{ marginTop: 14, border: "1px solid #ddd", borderRadius: 12, padding: 16 }}>
+      <section
+        style={{
+          marginTop: 14,
+          border: "1px solid #ddd",
+          borderRadius: 12,
+          padding: 16,
+        }}
+      >
         <form action={updateProduct} style={{ display: "grid", gap: 10 }}>
           <input type="hidden" name="id" value={product.id} />
 
           <label>
             Title
-            <input name="title" defaultValue={product.title} required style={{ width: "100%", padding: 8 }} />
+            <input
+              name="title"
+              defaultValue={product.title}
+              required
+              style={{ width: "100%", padding: 8 }}
+            />
           </label>
 
           <label>
             Category
-            <input name="category" defaultValue={product.category} required style={{ width: "100%", padding: 8 }} />
+            <input
+              name="category"
+              defaultValue={product.category}
+              required
+              style={{ width: "100%", padding: 8 }}
+            />
           </label>
 
           <label>
