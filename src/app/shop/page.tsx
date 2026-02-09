@@ -1,7 +1,7 @@
 // src/app/shop/page.tsx
 "use client";
 
-// This is the “Shop” browsing page. Styling is class-based
+// “Shop” browsing page
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -33,6 +33,10 @@ export default function ShopPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Favorites/Wishlist state (store productIds)
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
 
   // UI state synced with URL
   const [query, setQuery] = useState(qParam);
@@ -85,6 +89,117 @@ export default function ShopPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Load favorites + wishlist (if logged in)
+  useEffect(() => {
+    // Favorites
+    fetch("/api/favorites")
+      .then((r) => r.json())
+      .then((data) => {
+        const ids = new Set<string>();
+        for (const f of data?.favorites || []) {
+          const pid = f?.product?.id;
+          if (pid) ids.add(pid);
+        }
+        setFavoriteIds(ids);
+      })
+      .catch(() => {
+        // not logged in or route missing -> ignore
+      });
+
+    // Wishlist
+    fetch("/api/wishlist")
+      .then((r) => r.json())
+      .then((data) => {
+        const ids = new Set<string>();
+        for (const w of data?.wishlist || []) {
+          const pid = w?.product?.id;
+          if (pid) ids.add(pid);
+        }
+        setWishlistIds(ids);
+      })
+      .catch(() => {
+        // ignore
+      });
+  }, []);
+
+  async function toggleFavorite(productId: string) {
+    // optimistic toggle
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+
+    const res = await fetch("/api/favorites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productId }),
+    });
+
+    if (res.status === 401) {
+      alert("Please sign in to favorite items.");
+      // revert optimistic change
+      setFavoriteIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(productId)) next.delete(productId);
+        else next.add(productId);
+        return next;
+      });
+      return;
+    }
+
+    if (!res.ok) {
+      alert("Could not update favorite. Try again.");
+      // revert optimistic change
+      setFavoriteIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(productId)) next.delete(productId);
+        else next.add(productId);
+        return next;
+      });
+    }
+  }
+
+  async function toggleWishlist(productId: string) {
+    // optimistic toggle
+    setWishlistIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+
+    const res = await fetch("/api/wishlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productId }),
+    });
+
+    if (res.status === 401) {
+      alert("Please sign in to add items to your wishlist.");
+      // revert
+      setWishlistIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(productId)) next.delete(productId);
+        else next.add(productId);
+        return next;
+      });
+      return;
+    }
+
+    if (!res.ok) {
+      alert("Could not update wishlist. Try again.");
+      // revert
+      setWishlistIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(productId)) next.delete(productId);
+        else next.add(productId);
+        return next;
+      });
+    }
+  }
+
   // Build category options from products and known list
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -133,7 +248,7 @@ export default function ShopPage() {
     return sorted;
   }, [products, categoryParam, query, sort]);
 
-  // Pagination calculations (MUST be outside useMemo)
+  // Pagination calculations
   const totalItems = filtered.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
   const currentPage = Math.min(pageParam, totalPages);
@@ -147,10 +262,12 @@ export default function ShopPage() {
     <main style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
         <h1 style={{ margin: 0 }}>Shop</h1>
-        <nav style={{ display: "flex", gap: 12 }}>
+        <nav style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "flex-end" }}>
           <Link href="/">Home</Link>
           <Link href="/categories">Categories</Link>
           <Link href="/artisans">Artisans</Link>
+          <Link href="/favorites">Favorites</Link>
+          <Link href="/wishlist">Wishlist</Link>
         </nav>
       </header>
 
@@ -290,32 +407,71 @@ export default function ShopPage() {
             gap: 14,
           }}
         >
-          {paged.map((p) => (
-            <article key={p.id} style={{ border: "1px solid #ddd", borderRadius: 12, padding: 14 }}>
-              {p.imageUrl ? (
-                <img
-                  src={p.imageUrl}
-                  alt={p.title}
-                  style={{
-                    width: "100%",
-                    height: 160,
-                    objectFit: "cover",
-                    borderRadius: 10,
-                    marginBottom: 10,
-                    border: "1px solid #eee",
-                  }}
-                  loading="lazy"
-                />
-              ) : null}
+          {paged.map((p) => {
+            const isFav = favoriteIds.has(p.id);
+            const isWish = wishlistIds.has(p.id);
 
-              <h2 style={{ marginTop: 0, fontSize: 18 }}>{p.title}</h2>
-              <p style={{ margin: "8px 0" }}>{p.description}</p>
-              <p style={{ margin: "8px 0", fontWeight: 700 }}>${(p.priceCents / 100).toFixed(2)}</p>
-              <p style={{ margin: "8px 0", opacity: 0.75 }}>{p.category}</p>
+            return (
+              <article key={p.id} style={{ border: "1px solid #ddd", borderRadius: 12, padding: 14 }}>
+                {p.imageUrl ? (
+                  <img
+                    src={p.imageUrl}
+                    alt={p.title}
+                    style={{
+                      width: "100%",
+                      height: 160,
+                      objectFit: "cover",
+                      borderRadius: 10,
+                      marginBottom: 10,
+                      border: "1px solid #eee",
+                    }}
+                    loading="lazy"
+                  />
+                ) : null}
 
-              <Link href={`/products/${p.id}`}>View details →</Link>
-            </article>
-          ))}
+                <h2 style={{ marginTop: 0, fontSize: 18 }}>{p.title}</h2>
+                <p style={{ margin: "8px 0" }}>{p.description}</p>
+                <p style={{ margin: "8px 0", fontWeight: 700 }}>${(p.priceCents / 100).toFixed(2)}</p>
+                <p style={{ margin: "8px 0", opacity: 0.75 }}>{p.category}</p>
+
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => toggleFavorite(p.id)}
+                    style={{
+                      padding: "6px 10px",
+                      borderRadius: 8,
+                      border: "1px solid #ddd",
+                      background: isFav ? "#111" : "transparent",
+                      color: isFav ? "#fff" : "inherit",
+                      cursor: "pointer",
+                    }}
+                    aria-label={`Toggle favorite for ${p.title}`}
+                  >
+                    {isFav ? "♥ Favorited" : "♥ Favorite"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => toggleWishlist(p.id)}
+                    style={{
+                      padding: "6px 10px",
+                      borderRadius: 8,
+                      border: "1px solid #ddd",
+                      background: isWish ? "#111" : "transparent",
+                      color: isWish ? "#fff" : "inherit",
+                      cursor: "pointer",
+                    }}
+                    aria-label={`Toggle wishlist for ${p.title}`}
+                  >
+                    {isWish ? "★ Wishlisted" : "☆ Wishlist"}
+                  </button>
+
+                  <Link href={`/products/${p.id}`}>View details →</Link>
+                </div>
+              </article>
+            );
+          })}
         </section>
       )}
     </main>
