@@ -27,7 +27,7 @@ export default async function EditListingPage({
 
   const seller = await getSellerForUser(userId);
   if (!seller) {
-    // If you expect ensureSellerForUser in dashboard layout, this usually won't happen.
+    
     redirect("/dashboard");
   }
 
