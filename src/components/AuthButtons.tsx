@@ -9,19 +9,15 @@ export function AuthButtons() {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
       if (!wrapRef.current) return;
-      if (!wrapRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      if (!wrapRef.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
-  // Close on ESC
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
@@ -44,84 +40,29 @@ export function AuthButtons() {
 
   return (
     <div ref={wrapRef} style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
-      {/* Trigger */}
       <button
         type="button"
         className="btn"
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
       >
-        Hi, {label}
-        <span aria-hidden="true" style={{ opacity: 0.7 }}>▾</span>
+        Hi, {label} <span aria-hidden="true" style={{ opacity: 0.7 }}>▾</span>
       </button>
 
-      {/* Dropdown */}
       {open ? (
-        <div
-          role="menu"
-          aria-label="Account menu"
-          style={{
-            position: "absolute",
-            top: "calc(100% + 8px)",
-            right: 0,
-            minWidth: 180,
-            border: "1px solid #ddd",
-            borderRadius: 12,
-            background: "white",
-            padding: 8,
-            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-            zIndex: 50,
-          }}
-        >
-          <Link
-            role="menuitem"
-            href="/favorites"
-            className="btn"
-            onClick={() => setOpen(false)}
-            style={{
-              width: "100%",
-              display: "block",
-              textAlign: "left",
-              padding: "8px 10px",
-              borderRadius: 10,
-            }}
-          >
+        <div role="menu" aria-label="Account menu" className="menu">
+          <Link role="menuitem" href="/favorites" className="menuItem" onClick={() => setOpen(false)}>
             Favorites
           </Link>
 
-          <Link
-            role="menuitem"
-            href="/wishlist"
-            className="btn"
-            onClick={() => setOpen(false)}
-            style={{
-              width: "100%",
-              display: "block",
-              textAlign: "left",
-              padding: "8px 10px",
-              borderRadius: 10,
-              marginTop: 4,
-            }}
-          >
+          <Link role="menuitem" href="/wishlist" className="menuItem" onClick={() => setOpen(false)}>
             Wishlist
           </Link>
 
-          <div style={{ height: 1, background: "#eee", margin: "8px 0" }} />
+          <div className="menuDivider" />
 
-          <button
-            role="menuitem"
-            type="button"
-            className="btn"
-            onClick={() => signOut()}
-            style={{
-              width: "100%",
-              textAlign: "left",
-              padding: "8px 10px",
-              borderRadius: 10,
-            }}
-          >
+          <button role="menuitem" type="button" className="menuItem" onClick={() => signOut()}>
             Sign out
           </button>
         </div>

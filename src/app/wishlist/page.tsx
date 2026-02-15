@@ -23,25 +23,42 @@ export default function WishlistPage() {
   }, []);
 
   return (
-    <main style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1 style={{ margin: 0 }}>Wishlist</h1>
-        <Link href="/shop">Back to shop</Link>
+    <main className="container section">
+      <header className="row" style={{ justifyContent: "space-between" }}>
+        <h1 className="h1">Wishlist</h1>
+        <Link className="btn btn-ghost" href="/shop">Back to shop</Link>
       </header>
 
       {loading ? (
         <p style={{ marginTop: 16 }}>Loading…</p>
       ) : items.length === 0 ? (
-        <p style={{ marginTop: 16 }}>No wishlist items yet.</p>
+        <div className="card" style={{ marginTop: 16 }}>
+          <p className="muted" style={{ margin: 0 }}>No wishlist items yet.</p>
+        </div>
       ) : (
-        <ul style={{ marginTop: 16, paddingLeft: 18 }}>
+        <section className="grid" style={{ marginTop: 16 }}>
           {items.map((w) => (
-            <li key={w.product.id} style={{ marginBottom: 10 }}>
-              <Link href={`/products/${w.product.id}`}>{w.product.title}</Link>{" "}
-              — ${(w.product.priceCents / 100).toFixed(2)}
-            </li>
+            <article key={w.product.id} className="card">
+              <div className="media">
+                {w.product.imageUrl ? (
+                  <img src={w.product.imageUrl} alt={w.product.title} loading="lazy" />
+                ) : (
+                  <div className="placeholder" aria-hidden="true">
+                    <span>{w.product.title.slice(0, 1).toUpperCase()}</span>
+                  </div>
+                )}
+              </div>
+
+              <h2 className="h3" style={{ fontSize: 18 }}>{w.product.title}</h2>
+              <div className="cardMeta">
+                <span className="badge">${(w.product.priceCents / 100).toFixed(2)}</span>
+                <Link className="btn btn-primary" href={`/products/${w.product.id}`}>
+                  View →
+                </Link>
+              </div>
+            </article>
           ))}
-        </ul>
+        </section>
       )}
     </main>
   );

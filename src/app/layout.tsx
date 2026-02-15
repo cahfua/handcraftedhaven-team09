@@ -6,8 +6,6 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import Providers from "./providers";
 
-// NOTE (team): Fonts come from our Week 2 design doc:
-// Headings = Playfair Display, Body = Inter/Lato style. Using Inter here for body.
 const headingFont = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-heading",
@@ -25,11 +23,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${headingFont.variable} ${bodyFont.variable}`}>
       <body>
         <Providers>
           <SiteHeader />
-          {children}
+          <div className="site-main">{children}</div>
           <SiteFooter />
         </Providers>
       </body>

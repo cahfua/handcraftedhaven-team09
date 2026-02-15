@@ -103,7 +103,7 @@ export default function ShopPage() {
         setFavoriteIds(ids);
       })
       .catch(() => {
-        // not logged in or route missing -> ignore
+        // not logged in -> ignore
       });
 
     // Wishlist
@@ -139,7 +139,7 @@ export default function ShopPage() {
 
     if (res.status === 401) {
       alert("Please sign in to favorite items.");
-      // revert optimistic change
+      // revert
       setFavoriteIds((prev) => {
         const next = new Set(prev);
         if (next.has(productId)) next.delete(productId);
@@ -151,7 +151,7 @@ export default function ShopPage() {
 
     if (!res.ok) {
       alert("Could not update favorite. Try again.");
-      // revert optimistic change
+      // revert
       setFavoriteIds((prev) => {
         const next = new Set(prev);
         if (next.has(productId)) next.delete(productId);
@@ -238,12 +238,9 @@ export default function ShopPage() {
 
     // 3) sort
     const sorted = [...result];
-    if (sort === "price-asc") {
-      sorted.sort((a, b) => a.priceCents - b.priceCents);
-    } else if (sort === "price-desc") {
-      sorted.sort((a, b) => b.priceCents - a.priceCents);
-    }
-    // "newest" = keep API order
+    if (sort === "price-asc") sorted.sort((a, b) => a.priceCents - b.priceCents);
+    else if (sort === "price-desc") sorted.sort((a, b) => b.priceCents - a.priceCents);
+    // "newest" keeps API order
 
     return sorted;
   }, [products, categoryParam, query, sort]);
@@ -259,87 +256,94 @@ export default function ShopPage() {
   }, [filtered, currentPage]);
 
   return (
-    <main style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-        <h1 style={{ margin: 0 }}>Shop</h1>
-        <nav style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "flex-end" }}>
-          <Link href="/">Home</Link>
-          <Link href="/categories">Categories</Link>
-          <Link href="/artisans">Artisans</Link>
-          <Link href="/favorites">Favorites</Link>
-          <Link href="/wishlist">Wishlist</Link>
+    <main className="container section">
+      <header className="row" style={{ justifyContent: "space-between" }}>
+        <div>
+          <h1 className="h1">Shop</h1>
+          <p className="muted" style={{ marginTop: 6 }}>
+            Browse handcrafted items, filter by category, and save favorites.
+          </p>
+        </div>
+
+        <nav className="row" aria-label="Shop navigation" style={{ justifyContent: "flex-end" }}>
+          <Link className="btn btn-ghost" href="/">Home</Link>
+          <Link className="btn btn-ghost" href="/categories">Categories</Link>
+          <Link className="btn btn-ghost" href="/artisans">Artisans</Link>
         </nav>
       </header>
 
       {/* Filter bar */}
-      <section style={{ marginTop: 14, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        {/* Category */}
-        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ fontWeight: 600 }}>Category:</span>
-          <select
-            value={categoryParam}
-            onChange={(e) => updateUrl({ category: e.target.value, page: 1 })}
-            style={{ padding: 8, borderRadius: 8 }}
-            aria-label="Filter by category"
-          >
-            <option value="">All</option>
-            {categories.map((c) => (
-              <option key={c} value={c.toLowerCase()}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </label>
+      <section className="card" style={{ marginTop: 14 }}>
+        <div className="row">
+          {/* Category */}
+          <label className="field" style={{ minWidth: 220 }}>
+            <span style={{ fontWeight: 650 }}>Category</span>
+            <select
+              value={categoryParam}
+              onChange={(e) => updateUrl({ category: e.target.value, page: 1 })}
+              className="control"
+              aria-label="Filter by category"
+            >
+              <option value="">All</option>
+              {categories.map((c) => (
+                <option key={c} value={c.toLowerCase()}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        {/* Search */}
-        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ fontWeight: 600 }}>Search:</span>
-          <input
-            value={query}
-            onChange={(e) => {
-              const val = e.target.value;
-              setQuery(val);
-              updateUrl({ q: val, page: 1 });
+          {/* Search */}
+          <label className="field" style={{ minWidth: 260, flex: 1 }}>
+            <span style={{ fontWeight: 650 }}>Search</span>
+            <input
+              value={query}
+              onChange={(e) => {
+                const val = e.target.value;
+                setQuery(val);
+                updateUrl({ q: val, page: 1 });
+              }}
+              placeholder="Search products…"
+              className="control"
+              aria-label="Search products"
+            />
+          </label>
+
+          {/* Sort */}
+          <label className="field" style={{ minWidth: 220 }}>
+            <span style={{ fontWeight: 650 }}>Sort</span>
+            <select
+              value={sort}
+              onChange={(e) => {
+                const val = e.target.value as SortOption;
+                setSort(val);
+                updateUrl({ sort: val, page: 1 });
+              }}
+              className="control"
+              aria-label="Sort products"
+            >
+              <option value="newest">Newest</option>
+              <option value="price-asc">Price: Low → High</option>
+              <option value="price-desc">Price: High → Low</option>
+            </select>
+          </label>
+
+          {/* Clear */}
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("");
+              updateUrl({ q: "", page: 1 });
             }}
-            placeholder="Search products…"
-            style={{ padding: 8, borderRadius: 8, minWidth: 220 }}
-            aria-label="Search products"
-          />
-        </label>
-
-        {/* Sort */}
-        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ fontWeight: 600 }}>Sort:</span>
-          <select
-            value={sort}
-            onChange={(e) => {
-              const val = e.target.value as SortOption;
-              setSort(val);
-              updateUrl({ sort: val, page: 1 });
-            }}
-            style={{ padding: 8, borderRadius: 8 }}
-            aria-label="Sort products"
+            className="btn btn-ghost"
+            disabled={!query}
+            aria-disabled={!query}
           >
-            <option value="newest">Newest</option>
-            <option value="price-asc">Price: Low → High</option>
-            <option value="price-desc">Price: High → Low</option>
-          </select>
-        </label>
+            Clear
+          </button>
+        </div>
 
-        {/* Clear search */}
-        <button
-          type="button"
-          onClick={() => {
-            setQuery("");
-            updateUrl({ q: "", page: 1 });
-          }}
-          style={{ padding: "8px 12px", borderRadius: 8 }}
-          disabled={!query}
-        >
-          Clear
-        </button>
-
-        <p style={{ margin: 0, opacity: 0.75 }}>
+        <p className="muted" style={{ marginTop: 12, marginBottom: 0 }}>
           Showing <strong>{totalItems}</strong> items (showing {paged.length} on this page)
           {categoryParam ? (
             <>
@@ -352,35 +356,38 @@ export default function ShopPage() {
 
       {/* Pagination */}
       {!loading && totalItems > 0 ? (
-        <section style={{ marginTop: 14, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <button
-            type="button"
-            onClick={() => updateUrl({ page: currentPage - 1 })}
-            disabled={currentPage <= 1}
-            style={{ padding: "8px 12px", borderRadius: 8 }}
-          >
-            ← Prev
-          </button>
+        <section className="row" style={{ marginTop: 14, justifyContent: "space-between" }}>
+          <div className="row">
+            <button
+              type="button"
+              onClick={() => updateUrl({ page: currentPage - 1 })}
+              disabled={currentPage <= 1}
+              className="btn"
+            >
+              ← Prev
+            </button>
 
-          <span style={{ opacity: 0.8 }}>
-            Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
-          </span>
+            <button
+              type="button"
+              onClick={() => updateUrl({ page: currentPage + 1 })}
+              disabled={currentPage >= totalPages}
+              className="btn"
+            >
+              Next →
+            </button>
 
-          <button
-            type="button"
-            onClick={() => updateUrl({ page: currentPage + 1 })}
-            disabled={currentPage >= totalPages}
-            style={{ padding: "8px 12px", borderRadius: 8 }}
-          >
-            Next →
-          </button>
+            <span className="muted" style={{ marginLeft: 6 }}>
+              Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+            </span>
+          </div>
 
-          <label style={{ display: "flex", gap: 8, alignItems: "center", marginLeft: 6 }}>
-            <span style={{ fontWeight: 600 }}>Go to:</span>
+          <label className="row" style={{ gap: 8 }}>
+            <span style={{ fontWeight: 650 }}>Go to:</span>
             <select
               value={currentPage}
               onChange={(e) => updateUrl({ page: Number(e.target.value) })}
-              style={{ padding: 8, borderRadius: 8 }}
+              className="control"
+              style={{ width: 120 }}
               aria-label="Go to page"
             >
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
@@ -397,77 +404,63 @@ export default function ShopPage() {
       {loading ? (
         <p style={{ marginTop: 18 }}>Loading products…</p>
       ) : filtered.length === 0 ? (
-        <p style={{ marginTop: 18 }}>No products found.</p>
+        <div className="card" style={{ marginTop: 16 }}>
+          <p className="muted" style={{ margin: 0 }}>No products found.</p>
+        </div>
       ) : (
-        <section
-          style={{
-            marginTop: 16,
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: 14,
-          }}
-        >
+        <section className="grid" style={{ marginTop: 16 }}>
           {paged.map((p) => {
             const isFav = favoriteIds.has(p.id);
             const isWish = wishlistIds.has(p.id);
 
             return (
-              <article key={p.id} style={{ border: "1px solid #ddd", borderRadius: 12, padding: 14 }}>
-                {p.imageUrl ? (
-                  <img
-                    src={p.imageUrl}
-                    alt={p.title}
-                    style={{
-                      width: "100%",
-                      height: 160,
-                      objectFit: "cover",
-                      borderRadius: 10,
-                      marginBottom: 10,
-                      border: "1px solid #eee",
-                    }}
-                    loading="lazy"
-                  />
-                ) : null}
+              <article key={p.id} className="card">
+                <div className="media">
+                  {p.imageUrl ? (
+                    <img src={p.imageUrl} alt={p.title} loading="lazy" />
+                  ) : (
+                    <div className="placeholder" aria-hidden="true">
+                      <span>{p.title.slice(0, 1).toUpperCase()}</span>
+                    </div>
+                  )}
+                </div>
 
-                <h2 style={{ marginTop: 0, fontSize: 18 }}>{p.title}</h2>
-                <p style={{ margin: "8px 0" }}>{p.description}</p>
-                <p style={{ margin: "8px 0", fontWeight: 700 }}>${(p.priceCents / 100).toFixed(2)}</p>
-                <p style={{ margin: "8px 0", opacity: 0.75 }}>{p.category}</p>
+                <h2 className="h3" style={{ fontSize: 18 }}>{p.title}</h2>
+                <p className="muted" style={{ marginTop: 8, marginBottom: 10 }}>
+                  {p.description}
+                </p>
 
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 }}>
+                <div className="row" style={{ justifyContent: "space-between" }}>
+                  <span className="badge">${(p.priceCents / 100).toFixed(2)}</span>
+                  <span className="badge">{p.category}</span>
+                </div>
+
+                <div className="row" style={{ marginTop: 12 }}>
                   <button
                     type="button"
                     onClick={() => toggleFavorite(p.id)}
-                    style={{
-                      padding: "6px 10px",
-                      borderRadius: 8,
-                      border: "1px solid #ddd",
-                      background: isFav ? "#111" : "transparent",
-                      color: isFav ? "#fff" : "inherit",
-                      cursor: "pointer",
-                    }}
+                    className={isFav ? "btn btn-primary" : "btn"}
+                    aria-pressed={isFav}
                     aria-label={`Toggle favorite for ${p.title}`}
+                    title={isFav ? "Remove from favorites" : "Add to favorites"}
                   >
-                    {isFav ? "♥ Favorited" : "♥ Favorite"}
+                    {isFav ? "♥ Favorited" : "♡ Favorite"}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => toggleWishlist(p.id)}
-                    style={{
-                      padding: "6px 10px",
-                      borderRadius: 8,
-                      border: "1px solid #ddd",
-                      background: isWish ? "#111" : "transparent",
-                      color: isWish ? "#fff" : "inherit",
-                      cursor: "pointer",
-                    }}
+                    className={isWish ? "btn btn-secondary" : "btn"}
+                    aria-pressed={isWish}
                     aria-label={`Toggle wishlist for ${p.title}`}
+                    title={isWish ? "Remove from wishlist" : "Add to wishlist"}
                   >
                     {isWish ? "★ Wishlisted" : "☆ Wishlist"}
                   </button>
 
-                  <Link href={`/products/${p.id}`}>View details →</Link>
+                  <Link className="btn btn-ghost" href={`/products/${p.id}`}>
+                    View →
+                  </Link>
                 </div>
               </article>
             );
