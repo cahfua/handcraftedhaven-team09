@@ -4,6 +4,9 @@ import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 async function getSellerForUser(userId: string) {
   return prisma.seller.findUnique({ where: { userId } });
 }

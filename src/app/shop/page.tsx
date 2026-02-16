@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+
 const knownCategories = ["Misc", "Woodworking", "Textiles", "Ceramics", "Painting"];
 const PAGE_SIZE = 12;
 
