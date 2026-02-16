@@ -44,5 +44,3 @@ prisma/dev.db
 prisma/prisma/dev.db
 *.db
 
-# Experimental / deployment DB
-prisma-postgres/
